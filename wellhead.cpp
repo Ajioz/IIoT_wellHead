@@ -35,3 +35,9 @@ void loop() //loop routine runs over and over again forever
   
   delay(sensorReadDelay); //delay in milliseconds between read values
 }
+
+
+/*
+I have further changed component, this time I am using esp32 with 12-bit ADC  resolution and adc voltage is 3.3v max input.   what would be the new pressureZero analog reading for a 3.3v reference voltage
+
+*/
