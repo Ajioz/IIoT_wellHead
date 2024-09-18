@@ -1,5 +1,5 @@
 const int pressureInput = 34; // select the analog input pin for the pressure transducer
-const int pressureZero = 413*1.51; // analog reading of pressure transducer at 0 psi
+const int pressureZero = 413/1.51; // analog reading of pressure transducer at 0 psi
 const int pressureMax = 3720; // analog reading of pressure transducer at 200 psi
 const int pressureTransducerMaxPSI = 200; // psi value of transducer being used
 const int baudRate = 115200; // constant integer to set the baud rate for serial monitor
