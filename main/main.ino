@@ -25,3 +25,9 @@ void loop() {
 
   delay(sensorReadDelay); // delay in milliseconds between read values
 }
+
+
+/*
+Go over the IoT part, send data to cloud
+Develop the dashboard using the raw sent data as input
+*/
