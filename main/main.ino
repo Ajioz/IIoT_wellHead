@@ -3,8 +3,8 @@
 
 
 /*Put your SSID & Password*/
-const char* WIFI_SSID = "EjiroEgbedi";  // Enter SSID here
-const char* WIFI_PASS = "wirelessPump";  //Enter Password herez
+const char* WIFI_SSID = "AjioziDev";  // Enter SSID here
+const char* WIFI_PASS = "sandiewhyte123";  //Enter Password herez
 
 // Losant Smart Pump-Control credentials
 //const char* LOSANT_DEVICE_ID = "63f4bd0487b0e03668133368";
@@ -16,6 +16,35 @@ const char* WIFI_PASS = "wirelessPump";  //Enter Password herez
 const char* LOSANT_DEVICE_ID = "624020db4924f62857bc4695";
 const char* LOSANT_ACCESS_KEY = "2fe39268-bea5-4141-9b73-11b7d80fce30";
 const char* LOSANT_ACCESS_SECRET = "f6c21976af3c0d2de00a294b9a3cc1183fe5ececca1cfd6f08df2f2ca06d3310";
+
+
+//Defining the constant
+#define REPORTING_PERIOD_MS     5000
+#define threshold 300
+
+
+//Defining the hardware I/O
+#define deviceControl 2
+const int pressureInput = 34; // select the analog input pin for the pressure transducer;
+
+
+const int pressureZero = 413/1.51; // analog reading of pressure transducer at 0 psi
+const int pressureMax = 3720; // analog reading of pressure transducer at 200 psi
+const int pressureTransducerMaxPSI = 200; // psi value of transducer being used
+const int baudRate = 115200; // constant integer to set the baud rate for serial monitor
+const int sensorReadDelay = 250; // constant integer to set the sensor read delay in milliseconds
+
+float pressureValue = 0; // variable to store the value coming from the pressure transducer
+int analogReading = 0;  // variable to store the raw ADC value
+
+
+
+//Defining state data
+bool DeviceState = false;
+
+//Defining cycle state
+uint32_t tsLastReport = 0;
+uint8_t timeSinceLastReadgas = 0;
 
 const char* rootCABuff = \
 "-----BEGIN CERTIFICATE-----\n" \
@@ -80,20 +109,84 @@ void connect() {
   Serial.println("Connected!");
 }
 
+void toggle(){
+  DeviceState = !DeviceState;
+  Serial.println(DeviceState ? "Devcie ON" : "Device OFF");
+  digitalWrite(deviceControl, DeviceState ? HIGH : LOW);  
+}
 
-const int pressureInput = 34; // select the analog input pin for the pressure transducer
-const int pressureZero = 413/1.51; // analog reading of pressure transducer at 0 psi
-const int pressureMax = 3720; // analog reading of pressure transducer at 200 psi
-const int pressureTransducerMaxPSI = 200; // psi value of transducer being used
-const int baudRate = 115200; // constant integer to set the baud rate for serial monitor
-const int sensorReadDelay = 250; // constant integer to set the sensor read delay in milliseconds
+// Called whenever the device receives a command from the Losant platform.
+void handleCommand(LosantCommand *command) {
+  Serial.println();
+  Serial.print("Command received: ");
+  Serial.println(command->name);
+  if (strcmp(command->name, "Trigger") == 0) {
+     toggle();
+  }
+}
 
-float pressureValue = 0; // variable to store the value coming from the pressure transducer
-int analogReading = 0;  // variable to store the raw ADC value
-
+// Reconnects if required 
+void reconnect(){
+ bool toReconnect = false;
+  // If the WiFi or HUZZAH is not connected to Losant - we should reconnect
+  if(WiFi.status() != WL_CONNECTED || !device.connected()) {
+    toReconnect = true;
+  }
+  if(toReconnect) {
+    connect();
+  }
+}
 
 void setup() {
   Serial.begin(baudRate); // initializes serial communication at set baud rate bits per second
+  pinMode(deviceControl, OUTPUT);  
+  delay(100);  
+
+  Serial.println("Connecting to ");
+  Serial.println(WIFI_SSID);
+ 
+  //connect to your local wi-fi network
+  WiFi.begin(WIFI_SSID, WIFI_PASS);
+ 
+  //check wi-fi is connected to wi-fi network
+  while (WiFi.status() != WL_CONNECTED) {
+  delay(1000);
+  Serial.print(".");
+  }
+  Serial.println("");
+  Serial.println("WiFi connected..!");
+  Serial.print("Got IP: ");  Serial.println(WiFi.localIP());
+   
+  // Wait for serial to initialize.
+  while(!Serial) { }
+
+  Serial.println("Device Started");
+  Serial.println("-------------------------------------");
+  Serial.println("Running INDUSTRIAL IIOT");
+  Serial.println("-------------------------------------");
+  
+  // Register the command handler to be called when a command is received, from the Losant platform.
+  device.onCommand(&handleCommand);
+
+  connect();
+}
+
+
+void autoAlert() {
+  digitalWrite(deviceControl, LOW); 
+  Serial.println(deviceControl);
+}
+
+
+void report(float LPGas,float CO, float Smoke, float Hydrogen) {
+  StaticJsonDocument<500> jsonBuffer;
+  JsonObject root = jsonBuffer.to<JsonObject>();
+  root["LPGas"]     = LPGas;
+  root["COgas"]     = COgas;
+  root["Smoke"]     = Smoke;
+  root["Hydrogen"]  = Hydrogen;
+  device.sendState(root);
+  Serial.println("Reported to Losant!");
 }
 
 void loop() {
