@@ -186,34 +186,52 @@ void setup() {
 }
 
 
-void autoAlert() {
-  digitalWrite(deviceControl, LOW); 
-  Serial.println(deviceControl);
+void smartAlert() {
+  //create an alarm logic for beeping
+  digitalWrite(autoAlert, HIGH); //use an if count logic simulate a delay of nth weight
+  digitalWrite(autoAlert, LOW);  //use an if count logic simulate a delay of mth weight
 }
 
 
-void report(float LPGas,float CO, float Smoke, float Hydrogen) {
+void report(float PSI,float spread) {
   StaticJsonDocument<500> jsonBuffer;
   JsonObject root = jsonBuffer.to<JsonObject>();
-  root["LPGas"]     = LPGas;
-  root["COgas"]     = COgas;
-  root["Smoke"]     = Smoke;
-  root["Hydrogen"]  = Hydrogen;
+  root["PSI"]       = PSI;
+  root["spread"]    = spread;
   device.sendState(root);
   Serial.println("Reported to Losant!");
 }
 
 void loop() {
-  analogReading = analogRead(pressureInput); // reads value from input pin and assigns to variable
-  pressureValue = ((analogReading - pressureZero) * pressureTransducerMaxPSI) / (pressureMax - pressureZero); // conversion equation to convert analog reading to psi
-
-  Serial.print("Pressure: ");
-  Serial.print(pressureValue, 1); // prints value from previous line to serial
-  Serial.println(" psi"); // prints label to serial
-  Serial.print(analogReading);
-  Serial.println(" Analog value");
-
-  delay(sensorReadDelay); // delay in milliseconds between read values
+   bool toReconnect = false;
+    
+    if(WiFi.status() != WL_CONNECTED) {
+      Serial.println("Disconnected from WiFi");
+      toReconnect = true;
+    }
+    if(!device.connected()) {
+      Serial.println("Disconnected from MQTT");
+      toReconnect = true;
+    }
+    if(toReconnect) {
+      connect();
+    }
+  
+    device.loop();   
+      if (millis() - tsLastReport > REPORTING_PERIOD_MS){
+        analogReading = analogRead(pressureInput); // reads value from input pin and assigns to variable
+        pressureValue = ((analogReading - pressureZero) * pressureTransducerMaxPSI) / (pressureMax - pressureZero); // conversion equation to convert analog reading to psi
+      
+        Serial.print("Pressure: ");
+        Serial.print(pressureValue, 1); // prints value from previous line to serial
+        Serial.println(" psi"); // prints label to serial
+      
+        delay(sensorReadDelay); // delay in milliseconds between read values
+        if(analogReading > threshold)  smartAlert();
+           
+        report(pressureValue, analogReading);    
+        tsLastReport = millis();
+    }
 }
 
 
