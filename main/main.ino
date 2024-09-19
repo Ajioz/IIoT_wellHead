@@ -24,7 +24,9 @@ const char* LOSANT_ACCESS_SECRET = "f6c21976af3c0d2de00a294b9a3cc1183fe5ececca1c
 
 
 //Defining the hardware I/O
-#define deviceControl 2
+#define bleedControl 5
+#define alarmControl 18
+#define autoAlert 23
 const int pressureInput = 34; // select the analog input pin for the pressure transducer;
 
 
@@ -40,7 +42,8 @@ int analogReading = 0;  // variable to store the raw ADC value
 
 
 //Defining state data
-bool DeviceState = false;
+bool bleedState = false;
+bool alarmState = false;
 
 //Defining cycle state
 uint32_t tsLastReport = 0;
@@ -109,10 +112,16 @@ void connect() {
   Serial.println("Connected!");
 }
 
-void toggle(){
-  DeviceState = !DeviceState;
+void toggleBleed(){
+  bleedState = !bleedState;
+  Serial.println(bleedState ? "Devcie ON" : "Device OFF");
+  digitalWrite(bleedControl, bleedState ? HIGH : LOW);  
+}
+
+void toggleAlarm(){
+  alarmState = !alarmState;
   Serial.println(DeviceState ? "Devcie ON" : "Device OFF");
-  digitalWrite(deviceControl, DeviceState ? HIGH : LOW);  
+  digitalWrite(alarmControl, alarmState ? HIGH : LOW);  
 }
 
 // Called whenever the device receives a command from the Losant platform.
@@ -121,8 +130,12 @@ void handleCommand(LosantCommand *command) {
   Serial.print("Command received: ");
   Serial.println(command->name);
   if (strcmp(command->name, "Trigger") == 0) {
-     toggle();
+     toggleBleed();
   }
+    if (strcmp(command->name, "alarm") == 0) {
+     toggleAlarm();
+  }
+  
 }
 
 // Reconnects if required 
@@ -139,7 +152,8 @@ void reconnect(){
 
 void setup() {
   Serial.begin(baudRate); // initializes serial communication at set baud rate bits per second
-  pinMode(deviceControl, OUTPUT);  
+  pinMode(bleedControl, OUTPUT);  
+  pinMode(alarmControl, OUTPUT);  
   delay(100);  
 
   Serial.println("Connecting to ");
@@ -162,7 +176,7 @@ void setup() {
 
   Serial.println("Device Started");
   Serial.println("-------------------------------------");
-  Serial.println("Running INDUSTRIAL IIOT");
+  Serial.println("Running INDUSTRIAL IoT");
   Serial.println("-------------------------------------");
   
   // Register the command handler to be called when a command is received, from the Losant platform.
