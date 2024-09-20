@@ -3,24 +3,24 @@
 
 
 /*Put your SSID & Password*/
-const char* WIFI_SSID = "xxx";  // Enter SSID here
-const char* WIFI_PASS = "xxx";  //Enter Password herez
+const char* WIFI_SSID = "AjiozDev";  // Enter SSID here
+const char* WIFI_PASS = "sandiewhyte123";  //Enter Password herez
 
 // Losant Smart Pump-Control credentials
-//const char* LOSANT_DEVICE_ID = "xxx";
-//const char* LOSANT_ACCESS_KEY = "xxxe";
-//const char* LOSANT_ACCESS_SECRET = "xxx";
+//const char* LOSANT_DEVICE_ID = "xxxx";
+//const char* LOSANT_ACCESS_KEY = "xxxx";
+//const char* LOSANT_ACCESS_SECRET = "xxxx";
 
 
 // Losant eHealth credentials
-const char* LOSANT_DEVICE_ID = "xxx";
-const char* LOSANT_ACCESS_KEY = "xxx";
-const char* LOSANT_ACCESS_SECRET = "xxx";
+const char* LOSANT_DEVICE_ID = "xxxx";
+const char* LOSANT_ACCESS_KEY = "xxxx";
+const char* LOSANT_ACCESS_SECRET = "xxxx";
 
 
 //Defining the constant
 #define REPORTING_PERIOD_MS     5000
-#define threshold 300
+#define threshold 50
 
 
 //Defining the hardware I/O
@@ -51,7 +51,7 @@ uint8_t timeSinceLastReadgas = 0;
 
 const char* rootCABuff = \
 "-----BEGIN CERTIFICATE-----\n" \
-"xxx \
+"xxxx" \
 "-----END CERTIFICATE-----\n";
 
 WiFiClientSecure wifiClient;
@@ -101,7 +101,7 @@ void toggleBleed(){
 
 void toggleAlarm(){
   alarmState = !alarmState;
-  Serial.println(DeviceState ? "Devcie ON" : "Device OFF");
+  Serial.println(alarmState ? "Devcie ON" : "Device OFF");
   digitalWrite(alarmControl, alarmState ? HIGH : LOW);  
 }
 
@@ -208,7 +208,7 @@ void loop() {
         Serial.println(" psi"); // prints label to serial
       
         delay(sensorReadDelay); // delay in milliseconds between read values
-        if(analogReading > threshold)  smartAlert();
+        if(analogReading < threshold)  smartAlert();
            
         report(pressureValue, analogReading);    
         tsLastReport = millis();
